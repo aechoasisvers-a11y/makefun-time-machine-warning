@@ -1,30 +1,23 @@
-"""Write the one-line entry to /output/entry.txt.
-
-Pure stdlib Python 3.13. Deterministic: same bytes every run.
-"""
-
 import os
 
-ENTRY_TEXT = (
-    "WARNING: Do not alter the past. "
-    "Your grandfather is a load-bearing ancestor."
-)
+TEXT = "WARNING: Do not alter the past. Your grandfather is a load-bearing ancestor."
 
+# Gate self-check: 1-120 chars, not whitespace-only, one line, no leading/trailing space.
+assert 1 <= len(TEXT) <= 120, "text outside 1-120 chars"
+assert TEXT.strip(), "text is whitespace only"
+assert "\n" not in TEXT and "\r" not in TEXT, "text must be one line"
+assert TEXT == TEXT.strip(), "text has leading/trailing space"
 
-def main() -> None:
-    # Self-check: the text must be exactly the intended line, one line,
-    # non-blank, and inside the kit's 1 to 120 character gate.
-    assert ENTRY_TEXT == ENTRY_TEXT.strip(), "entry has stray whitespace"
-    assert "\n" not in ENTRY_TEXT, "entry must be a single line"
-    assert 1 <= len(ENTRY_TEXT) <= 120, "entry outside gate"
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, "entry.txt")
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        f.write(ENTRY_TEXT)
-    with open(path, "r", encoding="utf-8", newline="") as f:
-        assert f.read() == ENTRY_TEXT, "written output differs from text"
+out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+os.makedirs(out_dir, exist_ok=True)
+path = os.path.join(out_dir, "entry.txt")
+with open(path, "w", encoding="utf-8", newline="") as f:
+    f.write(TEXT)
 
-
-if __name__ == "__main__":
-    main()
+# Post-write verification: prove the bytes on disk are exactly the intended text,
+# so a silent write failure or encoding slip fails loudly instead of reaching the judge.
+with open(path, "rb") as f:
+    raw = f.read()
+assert raw.decode("utf-8") == TEXT, "written text differs from intended text"
+assert raw == TEXT.encode("utf-8"), "written bytes differ from intended text"
+assert len(raw) == len(TEXT.encode("utf-8")), "written byte length differs"
